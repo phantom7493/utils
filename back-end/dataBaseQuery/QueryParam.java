@@ -48,41 +48,53 @@ public class QueryParam {
         }
     }
 
-    public static List<Byte> parseToByte(List<String> target) {
-        if (target == null || target.size() == 0)
+    /**
+     * 将String集合转换为Byte集合
+     */
+    public static List<Byte> parseToByte(List<String> strList) {
+        if (strList == null || strList.size() == 0)
             return null;
         List<Byte> rst = new ArrayList<>();
-        target.parallelStream().
+        strList.parallelStream().
                 filter(str -> str.matches(BYTE)).
                 forEach(str -> rst.add(Byte.parseByte(str)));
         return rst.size() == 0 ? null : rst;
     }
 
-    public static List<Integer> parseToInteger(List<String> target) {
-        if (target == null || target.size() == 0)
+    /**
+     * 将String集合转换为Integer集合
+     */
+    public static List<Integer> parseToInteger(List<String> strList) {
+        if (strList == null || strList.size() == 0)
             return null;
         List<Integer> rst = new ArrayList<>();
-        target.parallelStream().
+        strList.parallelStream().
                 filter(str -> str.matches(INTEGER)).
                 forEach(str -> rst.add(Integer.parseInt(str)));
         return rst.size() == 0 ? null : rst;
     }
 
-    public static List<Double> parseToDouble(List<String> target) {
-        if (target == null || target.size() == 0)
+    /**
+     * 将String集合转换为Double集合
+     */
+    public static List<Double> parseToDouble(List<String> strList) {
+        if (strList == null || strList.size() == 0)
             return null;
         List<Double> rst = new ArrayList<>();
-        target.parallelStream().
+        strList.parallelStream().
                 filter(str -> str.matches(DOUBLE)).
                 forEach(str -> rst.add(Double.parseDouble(str)));
         return rst.size() == 0 ? null : rst;
     }
 
-    public static List<Date> parseToDate(List<String> target) {
-        if (target == null || target.size() == 0)
+    /**
+     * 将String集合转换为Date集合
+     */
+    public static List<Date> parseToDate(List<String> strList) {
+        if (strList == null || strList.size() == 0)
             return null;
         List<Date> rst = new ArrayList<>();
-        for (String str : target) {
+        for (String str : strList) {
             try {
                 rst.add(DATA_FORMATTER.parse(str));
             } catch (ParseException ignored) {
@@ -91,11 +103,14 @@ public class QueryParam {
         return rst.size() == 0 ? null : rst;
     }
 
-    public static List<String> parseToValue(List<String> target) {
-        if (target == null || target.size() == 0)
+    /**
+     * 将String集合内所有字符串用单引号包起来
+     */
+    public static List<String> parseToValue(List<String> strList) {
+        if (strList == null || strList.size() == 0)
             return null;
         List<String> rst = new ArrayList<>();
-        for (String str : target)
+        for (String str : strList)
             rst.add("'" + str + "'");
         return rst;
     }

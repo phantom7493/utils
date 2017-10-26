@@ -1,123 +1,199 @@
 (function ($) {
-    var $bTree;
-    var bNodes = [];
-    var aStyle = {
-        color: {
-            end: undefined,
-            others: undefined
-        },
-        style: ''
+
+    var bTree = function(){
+        console.log('bootstrapTree Created By 独自漫步〃寂静の夜空下');
     };
-    var callBack = {
-        onClick: function (node) {
+
+    /**
+     * 基本设置
+     */
+    var _basicSettings = {
+        defaultValue: [{
+            keyChain: 'nodeSettings.style.color',
+            value: {last: 'black', others: 'gray'}
+        }, {
+            keyChain: 'nodeSettings.style.offset',
+            value: {first: 8, others: 16}
+        },{
+            keyChain: 'nodeSettings.style.optional',
+            value: 'padding: 2px;margin: 1px;'
+        }]
+    };
+
+    /**
+     * 客户参数样例
+     * {
+     *    $bTree: $('#div_bTree'), //bootstrapTree的jQuery对象,不可为空
+     *    nodeSettings: { //bootstrapTree节点设置
+     *       style: { //节点样式
+     *          color: { //节点颜色
+     *             last: 'black', //叶子节点颜色
+     *             others: 'gray' //其余节点颜色
+     *          },
+     *          offset: { //节点偏移
+     *             first: 8, //顶层节点的偏移量
+     *             others: 16 //子节点的偏移量
+     *          }
+     *          optional: void 0
+     *       }
+     *       callBack: {
+     *          onClick: function($a,node){...}
+     *       }
+     *    },
+     *    nodes: [{
+     *       id: 1,
+     *       text: '用户管理',
+     *       icon: 'user', //使用bootstrap自带icon,即自动加上前缀'glyphicon glyphicon-'
+     *       data: {...}, //节点的附带数据
+     *       subnodes: [{
+     *          id: 2,
+     *          text: '用户列表',
+     *          icon: 'list'
+     *       }]
+     *    }]
+     * }
+     */
+    var _clientSettings = {};
+
+    /**
+     * bootstrapTree工具集
+     * @private
+     */
+    var _utils = (function () {
+
+        /**
+         * 判断目标是否为数组
+         */
+        function isArray(target) {
+            return Object.prototype.toString.call(target) === '[object Array]';
         }
-    };
 
-    var bTree = function ($divContainer) {
-        $bTree = $divContainer;
-        $bTree.addClass('bTree');
-        return bTree;
-    };
+        /**
+         * 通过字符串键链获取json中的某值,一旦链中有void 0,则返回void 0
+         */
+        function json_getValByKeyChain(json, keyChain) {
+            if (json === void 0) return void 0;
+            var keys = keyChain.split('.');
+            for (var i = 0, l = keys.length; i < l; i++)
+                if ((json = json[keys[i]]) === void 0) break;
+            return json;
+        }
 
-    bTree.aColor = function (end, others) {
-        aStyle.color.end = end;
-        aStyle.color.others = others;
-        return bTree;
-    };
-
-    bTree.nodesFromJson = function (nodes) {
-        bNodes = nodes;
-        return bTree;
-    };
-
-    bTree.nodesFromAjax = function (url) {
-        $.ajax({
-            type: 'post',
-            url: url,
-            dataType: 'json',
-            success: function (data) {
-                bNodes = data;
-            },
-            error: function () {
-                console.error('failed to get nodes');
+        /**
+         * 通过字符串键链设置json中的某值,若链中有void 0,则创建空{}
+         */
+        function json_setValByKeyChain(json, keyChain, value) {
+            if (json === void 0) json = {};
+            var sub = json, key, keys = keyChain.split('.'), n = keys.length - 1;
+            for (var i = 0; i <= n; i++) {
+                if (sub[key = keys[i]] === void 0)
+                    if (i !== n) sub[key] = {};
+                    else sub[key] = value;
+                sub = sub[key];
             }
-        });
-    };
+            return json;
+        }
 
-    bTree.onClick = function () {
+        /**
+         * 判断是否为叶子结点
+         */
+        function node_isEnd(node) {
+            return node['subnodes'] === void 0;
+        }
 
-    };
+        /**
+         * 生成节点(即a标签)html代码
+         */
+        function node_add_gnrtTagA(node,subNum){
+            var tmp,$a = $('<a href="javascript:void(0)" style="padding: 2px auto 4px 4px"></a>');
+            if(node['icon'] === void 0)
+                $a.text(node['text']);
+            else{
+                $a.addClass('glyphicon glyphicon-' + node['icon']);
+                //若有bootstrap图标则需要加空格
+                $a.text(' ' + node['text']);
+            }
+            tmp = json_getValByKeyChain(_clientSettings, 'nodeSettings.style.optional');
+            if (tmp !== void 0) {
+                if(tmp.indexOf('padding') === -1)
+                    tmp = _utils.json.getByKeyChain(_clientSettings,'nodeSettings.style.optional') + tmp;
+                $a[0].style = tmp;
+            }
+            //设置子节点左偏移
+            tmp = json_getValByKeyChain(_clientSettings, 'nodeSettings.style.offset');
+            $a[0].style.marginLeft = (tmp['first'] + subNum * tmp['others']) + 'px';
+            //若为叶子结点则设置颜色为color['end']
+            tmp = json_getValByKeyChain(_clientSettings, 'nodeSettings.style.color');
+            $a[0].style.color = node_isEnd(node) ? tmp['end'] : tmp['others'];
+            //注册节点单击事件
+            $a.on('click', (function ($a, node) {
+                return function () {
+                    var fn = json_getValByKeyChain(_clientSettings,'nodeSettings.callBack.onClick');
+                    if (node_isEnd(node))
+                        return fn !== void 0 ? fn($a, node) : void 0;
+                    var $ul = $a.next('ul');
+                    if ($ul.hasClass('hide')) $ul.removeClass('hide');
+                    else $ul.addClass('hide');
+                }
+            })($a, node));
+            return $a;
+        }
 
-    bTree.callBack = function (onEvent, fn) {
-        callBack[onEvent] = fn;
+        /**
+         * 生成bootstrapTree的html代码
+         */
+        function node_add($container, nodes, subNum) {
+            for(var i = 0,l = nodes.length;i < l;i++){
+                var $li = $('<li></li>'),
+                    node = nodes[i];
+                $li.append(node_add_gnrtTagA(node,subNum));
+                if(!node_isEnd(node)){
+                    var $ul = $('<ul class="nav nav-pills nav-stacked hide"></ul>');
+                    node_add($ul,node['subnodes'],subNum + 1);
+                    $li.append($ul);
+                }
+                $container.append($li);
+            }
+        }
+
+        return {
+            isArray: isArray,
+            node: {
+                add: node_add
+            },
+            json: {
+                getByKeyChain: json_getValByKeyChain,
+                setByKeyChain: json_setValByKeyChain
+            }
+        };
+    })();
+
+    /**
+     * 设置bTree参数,一个bTree一般只需调用一次
+     */
+    bTree.settings = function (settings) {
+        settings.$bTree.addClass('bTree');
+        var dv, dvs = _basicSettings.defaultValue;
+        for (var i = 0, l = dvs.length; i < l; i++)
+            if (_utils.json.getByKeyChain(settings, (dv = dvs[i]).keyChain) === void 0)
+                _utils.json.setByKeyChain(settings, dv.keyChain, dv.value);
+        _clientSettings = settings;
         return bTree;
     };
 
-    bTree.end = function () {
-        $bTree[0].style.textAlign = 'left';
-        var $ul = $('<ul class="nav nav-pills nav-stacked"></ul>');
-        $.each(bNodes, function (i, node) {
-            _bNode($ul, node, 0);
-        });
-        $bTree.append($ul[0]);
+    /**
+     * 生成Html代码
+     */
+    bTree.generate = function () {
+        var _$container = _clientSettings['$bTree'];
+        _$container.addClass('bTree');
+        _$container[0].style.padding = '0px 2px 4px 2px';
+        _clientSettings['$bTree'] = _$container;
+        _$container[0].style.textAlign = 'left';
+        var _$topUl = $('<ul class="nav nav-pills nav-stacked"></ul>');
+        _utils.node.add(_$topUl, _clientSettings['nodes'], 0);
+        _$container.append(_$topUl);
     };
-
-    function _bNode($container, node, subNum) {
-        var $li = _create$liA(node, subNum);
-        if (!_isLast(node)) {
-            var $ul = $(_simpleCreateTag('ul', {
-                id: 'ul_' + node.id,
-                class: 'nav nav-pills nav-stacked hide'
-            }));
-            $ul.attr('id', 'ul_' + node.id);
-            $.each(node.nodes, function (i, subnode) {
-                _bNode($ul, subnode, subNum + 1);
-            });
-            $li.append($ul[0]);
-        }
-        $li.find('> a').on('click', function (e) {
-            $bTree.find('a.active').removeClass('active');
-            $(e.target).addClass('active');
-            if (_isLast(node)) return void(callBack.onClick(node));
-            $ul = $li.find('> ul');
-            if ($ul.hasClass('hide'))
-                $ul.removeClass('hide');
-            else
-                $ul.addClass('hide');
-        });
-        $container.append($li[0]);
-    }
-
-    function _simpleCreateTag(tag, attrs) {
-        var tmp = '<' + tag;
-        for (var k in attrs)
-            if (attrs.hasOwnProperty(k) && k !== 'innerHtml' && attrs[k] !== undefined)
-                tmp += ' ' + k + '="' + attrs[k] + '"';
-        tmp += '>';
-        if (attrs['innerHtml'] !== undefined) tmp += attrs['innerHtml'];
-        tmp += '</' + tag + '>';
-        return tmp;
-    }
-
-    function _isLast(node) {
-        return node.nodes === undefined;
-    }
-
-    function _create$liA(node, subNum) {
-        var a = _simpleCreateTag('a', {
-            class: (node['icon'] === undefined) ? undefined : 'glyphicon glyphicon-' + node['icon'],
-            href: 'javascript: void(0)',
-            style: 'margin-left:' + (8 + 16 * subNum) + 'px;color:' +
-            (_isLast(node) ? aStyle.color.end : aStyle.color.others) +
-            aStyle.style,
-            innerHtml: ' ' + node['text']
-        });
-        var li = _simpleCreateTag('li', {
-            id: (node['id'] === undefined || _isLast(node)) ? undefined : 'li_' + node['id'],
-            innerHtml: a
-        });
-        return $(li);
-    }
 
     window.bTree = bTree;
 })(jQuery);

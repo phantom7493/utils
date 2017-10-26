@@ -1,131 +1,149 @@
 (function () {
-    if (window.bootstrapValidatorHelper !== undefined) return;
-    window.bvHelper = window.bootstrapValidatorHelper = (function () {
-        var bvh = function () {
+
+    var bvh = function () {
+        console.log('bootstarpValidatorHelper Created By 独自漫步〃寂静の夜空下');
+    };
+
+    /**
+     * bootstrapValidator使用样例
+     * bvh.bootstrapValidator.
+     *    currField('repassword','确认密码不能为空').identical('password','两次密码不一致').
+     *    currField('email').emailAddress('邮箱格式不正确').
+     *    end();
+     */
+    bvh.bootstrapValidator = (function () {
+
+        var bv = function () {
+            bvh();
         };
 
-        bvh.bootstrapValidator = (function () {
-            var bv = function () {
-            };
-            var currField,
-                bvParam = {
-                    feedbackIcons: {
-                        valid: 'glyphicon glyphicon-ok',
-                        invalid: 'glyphicon glyphicon-remove',
-                        validating: 'glyphicon glyphicon-refresh'
-                    },
-                    fields: {}
+        /**
+         * _field 样例
+         * {
+         *    curr: 'repassword',
+         *    list: {
+         *       account: {validators: {...}}
+         *    }
+         * }
+         */
+        var _field = {
+            curr: void 0,
+            list: {}
+        };
+
+        /**
+         * 设置当前字段,若emtryMessage为void 0,则字段可空
+         */
+        bv.currField = function (field, emptyMessage) {
+            _field.curr = field;
+            if (_field.list[field] === void 0)
+                _field.list[field] = {validators: {}};
+            if (emptyMessage !== void 0)
+                _field.list[field].validators.notEmpty = {
+                    message: emptyMessage
                 };
-            bv.setCurrField = function (field, emptyMessage) {
-                if (bvParam.fields[field] === undefined)
-                    bvParam.fields[field] = {validators: {}};
-                currField = field;
-                if (emptyMessage !== undefined)
-                    bvParam.fields[currField].validators.notEmpty = {
-                        message: emptyMessage
-                    };
-                return bv;
-            };
-
-            bv.end = function ($form) {
-                console.log(bvParam);
-                $form.bootstrapValidator(bvParam);
-                bvParam.fields = {};
-            };
-
-            bv.stringLength = function (min, max, message) {
-                bvParam.fields[currField].validators.stringLength = {
-                    min: min,
-                    max: max,
-                    message: message
-                };
-                return bv;
-            };
-
-            bv.regexp = function (regexp, message) {
-                bvParam.fields[currField].validators.regexp = {
-                    regexp: regexp,
-                    message: message
-                };
-                return bv;
-            };
-
-            bv.identical = function (field, message) {
-                bvParam.fields[currField].validators.identical = {
-                    field: field,
-                    message: message
-                };
-                return bv;
-            };
-
-            bv.emailAddress = function (message) {
-                bvParam.fields[currField].validators.emailAddress = {
-                    message: message
-                };
-                return bv;
-            };
-
             return bv;
-        })();
+        };
 
-        bvh.onSubmit = (function () {
-            var onSubmit = function () {
+        /**
+         * 真正执行bootstrapValidator处,最后调用***input外必须有一个class为form-group的元素
+         * @param $form 目标表单
+         */
+        bv.end = function ($form) {
+            $form.bootstrapValidator({
+                feedbackIcons: {
+                    valid: 'glyphicon glyphicon-ok',
+                    invalid: 'glyphicon glyphicon-remove',
+                    validating: 'glyphicon glyphicon-refresh'
+                },
+                fields: _field.list
+            });
+            _field = {
+                curr: void 0,
+                list: {}
             };
-            var before = {}, after = {}, ajaxParam = {};
+        };
 
-            onSubmit.beforeValidate = function (fn) {
-                before.validate = fn;
-                return onSubmit;
+        bv.stringLength = function (min, max, message) {
+            _field.list[_field.curr].validators.stringLength = {
+                min: min,
+                max: max,
+                message: message
             };
-            onSubmit.afterValidate = function (fn) {
-                after.validate = fn;
-                return onSubmit;
-            };
+            return bv;
+        };
 
-            onSubmit.beforeSubmit = function (fn) {
-                before.submit = fn;
-                return onSubmit;
+        bv.regexp = function (regexp, message) {
+            _field.list[_field.curr].validators.regexp = {
+                regexp: regexp,
+                message: message
             };
-            onSubmit.afterSubmit = function (fn) {
-                after.submit = fn;
-                return onSubmit;
+            return bv;
+        };
+
+        bv.identical = function (field, message) {
+            _field.list[_field.curr].validators.identical = {
+                field: field,
+                message: message
             };
+            return bv;
+        };
 
-            onSubmit.setAjaxParam = function (url, successFn, errorFn) {
-                ajaxParam.url = url;
-                ajaxParam.success = successFn;
-                ajaxParam.error = errorFn;
-                return onSubmit;
+        bv.emailAddress = function (message) {
+            _field.list[_field.curr].validators.emailAddress = {
+                message: message
             };
+            return bv;
+        };
 
-            onSubmit.end = function ($form) {
-                $form.on('success.form.bv', function (e) {
-                    e.preventDefault();
-                    if (before.validate !== undefined) before.validate();
-                    if (!$(e.target).data('bootstrapValidator').isValid())
-                        return false;
-                    if (after.validate !== undefined) after.validate();
-                    if (before.submit !== undefined) before.submit();
-                    $.ajax({
-                        type: 'post',
-                        url: ajaxParam.url,
-                        data: $(e.target).serialize(),
-                        cache: false,
-                        success: function (data) {
-                            if (ajaxParam.success !== undefined)
-                                ajaxParam.success(data);
-                        },
-                        error: function (data) {
-                            if (ajaxParam.error !== undefined)
-                                ajaxParam.error(data);
-                        }
-                    });
-                });
-            };
-
-            return onSubmit;
-        })();
-
-        return bvh;
+        return bv;
     })();
+
+    /**
+     * 便捷操作$form.on('success.form.bv')
+     */
+    bvh.easyForm = (function () {
+
+        var easyForm = function () {
+            bvh();
+        };
+
+        //表单提交时的事件 可为'before/after/success/error'
+        var _whenSubmit = {};
+
+        /**
+         * @param status 可为 'before/after/success/error'
+         * @param fn 事件方法
+         */
+        easyForm.whenSubmit = function (status, fn) {
+            _whenSubmit[status] = fn;
+            return easyForm;
+        };
+
+        easyForm.end = function ($form) {
+            $form.on('success.form.bv', function (e) {
+                e.preventDefault();
+                if (_whenSubmit.before !== void 0) _whenSubmit.before();
+                $.ajax({
+                    type: 'post',
+                    url: $form.attr('action'),
+                    data: $(e.target).serialize(),
+                    cache: false,
+                    success: function (data) {
+                        if (_whenSubmit.success !== void 0)
+                            _whenSubmit.success(data);
+                    },
+                    error: function (data) {
+                        if (_whenSubmit.error !== void 0)
+                            _whenSubmit.error(data);
+                    }
+                });
+                if (_whenSubmit.after !== void 0) _whenSubmit.submit.after();
+            });
+        };
+
+        return easyForm;
+    })();
+
+    window.bvh = window.bvHelper = window.bootstrapValidatorHelper = bvh;
 })();

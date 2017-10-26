@@ -6,11 +6,11 @@
     /**
      * 基本参数
      */
-    var _basicParams = {
+    var _basicSettings = {
         /**
          * 查询参数
          */
-        query: {},
+        queryParam: {},
 
         /**
          * 查询类型
@@ -61,7 +61,7 @@
     /**
      * 客户端参数设置
      */
-    var _clientParams = {
+    var _clientSettings = {
         /**
          * field 参数样例
          * field:{
@@ -121,7 +121,7 @@
          * 获取指定条件的索引值
          */
         function _indexOf(field, queryType, val) {
-            var vals = _basicParams.query[field];
+            var vals = _basicSettings.queryParam[field];
             if (vals === void 0) return -1;
             if ((vals = vals[queryType]) === void 0) return -1;
             for (var i = 0, l = vals.length; i < l; i++)
@@ -133,7 +133,7 @@
          * 校验数据
          */
         function _validate(field, vals) {
-            var validator = _clientParams.field[field].validator;
+            var validator = _clientSettings.field[field].validator;
             if (validator === void 0) return void 0;
             var canEmpty = validator.notEmpty === void 0,
                 regexps = validator.regexp;
@@ -151,8 +151,8 @@
          * 获取指定字段允许的查询类型,只可用于读取,不能修改
          */
         function _getValidQueryType(field) {
-            var validList = _clientParams.field[field].queryType,
-                all = _basicParams.queryType;
+            var validList = _clientSettings.field[field].queryType,
+                all = _basicSettings.queryType;
             if (validList === void 0) return all;
             if (!_utils.isArray(validList)) {
                 switch (validList) {
@@ -183,10 +183,10 @@
             indexOf: _indexOf,
             aliasMapping: {
                 field: function (alias) {
-                    return _aliasMapping(alias, _clientParams.field)
+                    return _aliasMapping(alias, _clientSettings.field)
                 },
                 queryType: function (alias) {
-                    return _aliasMapping(alias, _basicParams.queryType)
+                    return _aliasMapping(alias, _basicSettings.queryType)
                 }
             },
             validate: _validate,
@@ -197,8 +197,8 @@
     /**
      * 设置客户端参数
      */
-    qh.setParams = function (params) {
-        _clientParams = params;
+    qh.settings = function (settings) {
+        _clientSettings = settings;
     };
 
     /**
@@ -214,7 +214,7 @@
      *
      */
     qh.getQueryParams = function () {
-        var rst = [], queryParam = _basicParams.query;
+        var rst = [], queryParam = _basicSettings.queryParam;
         for (var field in queryParam) {
             if (!queryParam.hasOwnProperty(field)) continue;
             var tmp = {}, conditions;
@@ -237,20 +237,20 @@
     };
 
     /**
-     * 添加条件,若有错误返回错误信息,否则返回void 0
+     * 添加条件,若有错误则返回错误信息,否则返回void 0
      */
     qh.add = function (fieldAlias, queryTypeAlias, val) {
         var field = _utils.aliasMapping.field(fieldAlias),
             queryType = _utils.aliasMapping.queryType(queryTypeAlias);
         if (_utils.indexOf(field, queryType, val) !== -1)
-            return _basicParams.errMsg.conditionRepetition;
+            return _basicSettings.errMsg.conditionRepetition;
         var msg = _utils.validate(field,
             (queryType !== 'between' && queryType !== 'notBetween') ?
                 val : val.split(','));
         if (msg !== void 0) return msg;
-        var tmp = _basicParams.query[field];
+        var tmp = _basicSettings.queryParam[field];
         if(tmp === void 0)
-            tmp = _basicParams.query[field] = {};
+            tmp = _basicSettings.queryParam[field] = {};
         if (tmp[queryType] === void 0)
             tmp[queryType] = [];
         tmp[queryType].push(val);
@@ -261,14 +261,14 @@
      */
     qh.remove = function (fieldAlias, queryTypeAlias, val) {
         if(fieldAlias === void 0)
-            return void(_basicParams.query = {});
+            return void(_basicSettings.queryParam = {});
         var field = _utils.aliasMapping.field(fieldAlias);
         if(queryTypeAlias === void 0)
-            return void(_basicParams.query[field] = void 0);
+            return void(_basicSettings.queryParam[field] = void 0);
         var queryType = _utils.aliasMapping.queryType(queryTypeAlias),
             index = _utils.indexOf(field, queryType, val);
         if (index !== -1)
-            _basicParams.query[field][queryType].splice(index, 1);
+            _basicSettings.queryParam[field][queryType].splice(index, 1);
     };
 
     /**
@@ -279,11 +279,14 @@
      */
     qh.iterator = {
         field: function (fn) {
-            _utils.foreach(fn, _clientParams.field);
+            _utils.foreach(fn, _clientSettings.field);
         },
-        query: function (fn) {
-            _utils.foreach(fn, _basicParams.query);
+        queryParam: function (fn) {
+            _utils.foreach(fn, _basicSettings.queryParam);
         },
+        /**
+         * 遍历指定字段允许的查询类型
+         */
         queryType: function (fieldAlias, fn) {
             _utils.foreach(fn, _utils.getValidQueryType(_utils.aliasMapping.field(fieldAlias)));
         }
